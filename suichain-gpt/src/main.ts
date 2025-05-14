@@ -445,6 +445,7 @@ class AIAssistant {
   }
 }
 
+
 // Main App Class
 class SuichainApp {
   private appState: AppState;
@@ -491,6 +492,7 @@ class SuichainApp {
 
   private async init(): Promise<void> {
     // Initialize components
+  
     this.components.set('aiAssistant', new AIAssistant(this.appState));
     
     // Setup state subscriptions
@@ -509,6 +511,7 @@ class SuichainApp {
   }
 
   private render(): void {
+    
     const app = document.querySelector<HTMLDivElement>('#app');
     if (!app) return;
 
@@ -662,23 +665,26 @@ class SuichainApp {
     `;
   }
 
-  private renderView(view: string): string {
-    switch (view) {
-      case 'assistant':
-        const aiAssistant = this.components.get('aiAssistant');
-        return aiAssistant ? aiAssistant.render() : '';
-      case 'simulator':
-        return this.renderSimulatorView();
-      case 'portfolio':
-        return this.renderPortfolioView();
-      case 'market':
-        return this.renderMarketView();
-      case 'learn':
-        return this.renderLearnView();
-      default:
-        return this.renderDashboard();
+private renderView(view: string): string {
+  switch (view) {
+    case 'assistant': {
+      const aiAssistant = this.components.get('aiAssistant');
+      return aiAssistant ? aiAssistant.render() : '<div class="text-red-500">AI Assistant component not found.</div>';
     }
+    case 'simulator':
+      return this.renderSimulatorView();
+    case 'portfolio':
+      return this.renderPortfolioView();
+    case 'market':
+      return this.renderMarketView();
+    case 'learn':
+      return this.renderLearnView();
+    default:
+      console.warn(`Unknown view: ${view}. Falling back to dashboard.`);
+      return this.renderDashboard();
   }
+}
+
 
   private renderDashboard(): string {
     return `
@@ -1162,42 +1168,107 @@ class SuichainApp {
     `;
   }
 
+  // Add this method to render mobile navigation
+private renderMobileNav(): string {
+  const currentView = this.appState.get('currentView');
+  const isMobileMenuOpen = this.appState.get('isMobileMenuOpen') || false;
+  
+  return `
+    <div class="md:hidden">
+      <!-- Mobile Header -->
+      <div class="flex items-center justify-between p-4 bg-slate-900/50 backdrop-blur-lg border-b border-slate-700/50">
+        <div class="flex items-center space-x-3">
+          <img src="/logo.svg" alt="SuiChain GPT" class="h-8 w-8">
+          <span class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            SuiChain GPT
+          </span>
+        </div>
+        
+        <!-- Hamburger Menu Button -->
+        <button class="mobile-menu-toggle p-2 rounded-lg hover:bg-slate-800 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isMobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Mobile Navigation Menu -->
+      <div class="mobile-nav ${isMobileMenuOpen ? 'block' : 'hidden'} bg-slate-900/95 backdrop-blur-lg border-b border-slate-700/50">
+        <nav class="p-4">
+          <ul class="space-y-2">
+            ${this.navItems.map(item => `
+              <li>
+                <a href="#" 
+                   class="nav-link mobile-nav-link flex items-center p-3 rounded-lg transition-all ${
+                     currentView === item.view 
+                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                   }"
+                   data-view="${item.view}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 ${
+                    currentView === item.view ? 'text-white' : 'text-slate-400'
+                  }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${item.icon}" />
+                  </svg>
+                  <span>${item.label}</span>
+                  ${item.badge ? `
+                    <span class="ml-auto text-xs px-2 py-1 rounded-full ${
+                      item.badge === 'New' ? 'bg-green-500 text-white' : 'bg-slate-600 text-white'
+                    }">${item.badge}</span>
+                  ` : ''}
+                </a>
+              </li>
+            `).join('')}
+          </ul>
+        </nav>
+      </div>
+    </div>
+  `;
+}
+
+
   private attachEventListeners(): void {
-    // Navigation links
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const view = (e.currentTarget as HTMLElement).dataset.view;
-        if (view) {
-          this.appState.update('currentView', view);
-        }
-      });
-    });
-
-    // Connect wallet button
-    const connectWalletBtn = document.getElementById('connect-wallet');
-    if (connectWalletBtn) {
-      connectWalletBtn.addEventListener('click', () => {
-        this.connectWallet();
-      });
+  // Use event delegation for better handling
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    
+    // Handle navigation links (both desktop and mobile)
+    const navLink = target.closest('.nav-link');
+    if (navLink) {
+      e.preventDefault();
+      const view = navLink.getAttribute('data-view');
+      if (view) {
+        this.appState.update('currentView', view);
+        // Close mobile menu after navigation
+        this.appState.update('isMobileMenuOpen', false);
+      }
     }
-
-    // Connect wallet prompt
-    const connectWalletPrompt = document.getElementById('connect-wallet-prompt');
-    if (connectWalletPrompt) {
-      connectWalletPrompt.addEventListener('click', () => {
-        this.connectWallet();
-      });
+    
+    // Handle mobile menu toggle
+    const menuToggle = target.closest('.mobile-menu-toggle');
+    if (menuToggle) {
+      e.preventDefault();
+      const isOpen = this.appState.get('isMobileMenuOpen') || false;
+      this.appState.update('isMobileMenuOpen', !isOpen);
     }
-
-    // Simulator
-    const runSimulationBtn = document.getElementById('run-simulation');
-    if (runSimulationBtn) {
-      runSimulationBtn.addEventListener('click', () => {
-        this.runSimulation();
-      });
+    
+    // Handle connect wallet button
+    if (target.id === 'connect-wallet' || target.closest('#connect-wallet')) {
+      this.connectWallet();
     }
-  }
+    
+    // Handle connect wallet prompt
+    if (target.id === 'connect-wallet-prompt' || target.closest('#connect-wallet-prompt')) {
+      this.connectWallet();
+    }
+    
+    // Handle run simulation button
+    if (target.id === 'run-simulation' || target.closest('#run-simulation')) {
+      this.runSimulation();
+    }
+  });
+}
+
 
   private async connectWallet(): Promise<void> {
     // Simulate wallet connection
@@ -1378,4 +1449,5 @@ class SuichainApp {
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   new SuichainApp();
+
 });
