@@ -1,0 +1,1 @@
+{"root":["./src/server.ts","./src/main.ts","./src/vite-env.d.ts","./src/routes/aiassistant.ts","./src/routes/db.ts","./src/routes/learndefi.ts","./src/routes/marketdata.ts","./src/routes/portfolio.ts","./src/routes/portfolioroutes.ts","./src/routes/strategysimulator.ts"],"errors":true,"version":"5.8.3"}

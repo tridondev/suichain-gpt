@@ -1,5 +1,8 @@
 import './style.css';
 
+
+
+
 // Types and Interfaces
 interface NavItem {
   id: string;
@@ -999,68 +1002,335 @@ private renderView(view: string): string {
   }
 
   private renderMarketView(): string {
-    const marketData = this.appState.get('marketData');
-    
-    return `
-      <div class="space-y-6">
-        <div class="grid md:grid-cols-3 gap-6">
-          <div class="col-span-2">
-            <div class="card p-6">
-              <h3 class="text-lg font-semibold text-white mb-4">Market Overview</h3>
-              <div class="h-64 bg-slate-800 rounded-lg flex items-center justify-center">
-                <p class="text-slate-400">Chart Placeholder</p>
+  const marketData = this.appState.get('marketData') || {
+    chartData: [
+      { date: '05/01', price: 1.24, volume: 87, tps: 1243 },
+      { date: '05/02', price: 1.32, volume: 92, tps: 1358 },
+      { date: '05/03', price: 1.41, volume: 110, tps: 1402 },
+      { date: '05/04', price: 1.38, volume: 105, tps: 1289 },
+      { date: '05/05', price: 1.45, volume: 125, tps: 1512 },
+      { date: '05/06', price: 1.52, volume: 142, tps: 1623 },
+      { date: '05/07', price: 1.68, volume: 168, tps: 1745 },
+      { date: '05/08', price: 1.72, volume: 172, tps: 1802 },
+      { date: '05/09', price: 1.79, volume: 185, tps: 1956 },
+      { date: '05/10', price: 1.83, volume: 190, tps: 2103 },
+      { date: '05/11', price: 1.91, volume: 210, tps: 2254 },
+      { date: '05/12', price: 2.05, volume: 240, tps: 2387 },
+      { date: '05/13', price: 2.21, volume: 285, tps: 2512 },
+      { date: '05/14', price: 2.35, volume: 310, tps: 2645 },
+    ],
+    topGainers: [
+      { token: 'SUI', change: 15.6 },
+      { token: 'CETUS', change: 12.8 },
+      { token: 'SUISWAP', change: 9.3 },
+      { token: 'TURBOS', change: 7.2 },
+      { token: 'SCALLOP', change: -2.1 }
+    ]
+  };
+  
+  // Create the chart script - this will be injected at the end of the body
+  const chartScript = `
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // Reference to the chart container
+        const chartContainer = document.getElementById('sui-chart-container');
+        const priceButton = document.getElementById('price-btn');
+        const volumeButton = document.getElementById('volume-btn');
+        const tpsButton = document.getElementById('tps-btn');
+        
+        // Chart data
+        const chartData = ${JSON.stringify(marketData.chartData)};
+        
+        // Chart configuration
+        let chart;
+        const chartConfig = {
+          type: 'line',
+          data: {
+            labels: chartData.map(item => item.date),
+            datasets: [{
+              label: 'SUI Price ($)',
+              data: chartData.map(item => item.price),
+              borderColor: 'rgb(14, 165, 233)',
+              backgroundColor: 'rgba(14, 165, 233, 0.2)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 0,
+              pointHoverRadius: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index',
+            },
+            plugins: {
+              legend: {
+                display: false,
+              },
+              tooltip: {
+                backgroundColor: '#1F2937',
+                titleColor: '#F9FAFB',
+                bodyColor: '#F9FAFB',
+                borderColor: '#374151',
+                borderWidth: 1,
+                padding: 10,
+                displayColors: false,
+                callbacks: {
+                  label: function(context) {
+                    let value = context.raw;
+                    return typeof value === 'number' ? '$' + value.toFixed(2) : value;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: {
+                  color: 'rgba(55, 65, 81, 0.3)',
+                },
+                ticks: {
+                  color: '#9CA3AF',
+                }
+              },
+              y: {
+                grid: {
+                  color: 'rgba(55, 65, 81, 0.3)',
+                  drawBorder: false,
+                },
+                ticks: {
+                  color: '#9CA3AF',
+                  callback: function(value) {
+                    return '$' + value;
+                  }
+                }
+              }
+            }
+          }
+        };
+        
+        // Create the chart
+        chart = new Chart(
+          document.getElementById('sui-chart'),
+          chartConfig
+        );
+        
+        // Set up button event listeners
+        priceButton.addEventListener('click', () => {
+          switchToDataset('price', 'SUI Price ($)', 'rgb(14, 165, 233)', 'rgba(14, 165, 233, 0.2)', '$');
+          priceButton.classList.add('bg-blue-600', 'text-white');
+          priceButton.classList.remove('bg-slate-800', 'text-slate-300');
+          volumeButton.classList.add('bg-slate-800', 'text-slate-300');
+          volumeButton.classList.remove('bg-blue-600', 'text-white');
+          tpsButton.classList.add('bg-slate-800', 'text-slate-300');
+          tpsButton.classList.remove('bg-blue-600', 'text-white');
+        });
+        
+        volumeButton.addEventListener('click', () => {
+          switchToDataset('volume', 'Volume (millions)', 'rgb(139, 92, 246)', 'rgba(139, 92, 246, 0.2)', '');
+          volumeButton.classList.add('bg-blue-600', 'text-white');
+          volumeButton.classList.remove('bg-slate-800', 'text-slate-300');
+          priceButton.classList.add('bg-slate-800', 'text-slate-300');
+          priceButton.classList.remove('bg-blue-600', 'text-white');
+          tpsButton.classList.add('bg-slate-800', 'text-slate-300');
+          tpsButton.classList.remove('bg-blue-600', 'text-white');
+        });
+        
+        tpsButton.addEventListener('click', () => {
+          switchToDataset('tps', 'Transactions per second', 'rgb(16, 185, 129)', 'rgba(16, 185, 129, 0.1)', '');
+          tpsButton.classList.add('bg-blue-600', 'text-white');
+          tpsButton.classList.remove('bg-slate-800', 'text-slate-300');
+          priceButton.classList.add('bg-slate-800', 'text-slate-300');
+          priceButton.classList.remove('bg-blue-600', 'text-white');
+          volumeButton.classList.add('bg-slate-800', 'text-slate-300');
+          volumeButton.classList.remove('bg-blue-600', 'text-white');
+        });
+        
+        function switchToDataset(metric, label, borderColor, backgroundColor, prefix) {
+          chart.data.datasets[0].data = chartData.map(item => item[metric]);
+          chart.data.datasets[0].label = label;
+          chart.data.datasets[0].borderColor = borderColor;
+          chart.data.datasets[0].backgroundColor = backgroundColor;
+          
+          chart.options.plugins.tooltip.callbacks.label = function(context) {
+            let value = context.raw;
+            return typeof value === 'number' ? prefix + value.toFixed(metric === 'price' ? 2 : 0) : value;
+          };
+          
+          chart.options.scales.y.ticks.callback = function(value) {
+            return prefix + value;
+          };
+          
+          chart.update();
+        }
+      });
+    </script>
+  `;
+  
+  // Create the HTML for the market view
+  return `
+    <div class="space-y-6">
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="col-span-2">
+          <div class="card p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-white">Sui Network Metrics</h3>
+              <div class="flex space-x-2">
+                <button 
+                  id="price-btn" 
+                  class="px-3 py-1 rounded-md text-sm bg-blue-600 text-white"
+                >
+                  Price
+                </button>
+                <button 
+                  id="volume-btn" 
+                  class="px-3 py-1 rounded-md text-sm bg-slate-800 text-slate-300 hover:bg-slate-700"
+                >
+                  Volume
+                </button>
+                <button 
+                  id="tps-btn" 
+                  class="px-3 py-1 rounded-md text-sm bg-slate-800 text-slate-300 hover:bg-slate-700"
+                >
+                  TPS
+                </button>
               </div>
             </div>
-          </div>
-          
-          <div class="card p-6">
-            <h3 class="text-lg font-semibold text-white mb-4">Top Movers</h3>
-            <div class="space-y-3">
-              ${marketData?.topGainers?.map((gainer: any) => `
-                <div class="flex justify-between items-center">
-                  <span class="text-sm text-white">${gainer.token}</span>
-                  <span class="text-sm ${gainer.change >= 0 ? 'text-green-400' : 'text-red-400'}">
-                    ${gainer.change >= 0 ? '+' : ''}${gainer.change}%
-                  </span>
-                </div>
-              `).join('') || '<p class="text-slate-400">Loading...</p>'}
+            <div id="sui-chart-container" class="h-64 bg-slate-800 rounded-lg">
+              <canvas id="sui-chart"></canvas>
             </div>
           </div>
         </div>
         
         <div class="card p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">DeFi Protocols</h3>
-          <div class="grid md:grid-cols-3 gap-4">
-            ${this.getStakingOptions().map(protocol => `
-              <div class="p-4 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
-                <div class="flex justify-between items-start mb-3">
-                  <h4 class="font-medium text-white">${protocol.name}</h4>
-                  <span class="text-xs px-2 py-1 rounded-full ${
-                    protocol.risk === 'low' ? 'bg-green-500/20 text-green-400' :
-                    protocol.risk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-red-500/20 text-red-400'
-                  }">
-                    ${protocol.risk} risk
-                  </span>
-                </div>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-slate-400">TVL</span>
-                    <span class="text-white">${protocol.tvl}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-400">APY</span>
-                    <span class="text-green-400">${protocol.apy}</span>
-                  </div>
-                </div>
+          <h3 class="text-lg font-semibold text-white mb-4">Sui Ecosystem Movers</h3>
+          <div class="space-y-3">
+            ${marketData?.topGainers?.map((gainer: any) => `
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-white">${gainer.token}</span>
+                <span class="text-sm ${gainer.change >= 0 ? 'text-green-400' : 'text-red-400'}">
+                  ${gainer.change >= 0 ? '+' : ''}${gainer.change}%
+                </span>
               </div>
-            `).join('')}
+            `).join('') || '<p class="text-slate-400">Loading...</p>'}
           </div>
         </div>
       </div>
-    `;
+      
+      <div class="card p-6">
+        <h3 class="text-lg font-semibold text-white mb-4">Sui DeFi Protocols</h3>
+        <div class="grid md:grid-cols-3 gap-4">
+          ${this.getStakingOptions().map(protocol => `
+            <div class="p-4 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
+              <div class="flex justify-between items-start mb-3">
+                <h4 class="font-medium text-white">${protocol.name}</h4>
+                <span class="text-xs px-2 py-1 rounded-full ${
+                  protocol.risk === 'low' ? 'bg-green-500/20 text-green-400' :
+                  protocol.risk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                  'bg-red-500/20 text-red-400'
+                }">
+                  ${protocol.risk} risk
+                </span>
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">TVL</span>
+                  <span class="text-white">${protocol.tvl}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">APY</span>
+                  <span class="text-green-400">${protocol.apy}</span>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <!-- Chart.js library -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+      
+      <!-- Initialize chart -->
+      ${chartScript}
+    </div>
+  `;
+}
+
+  private async fetchMarketData(): Promise<void> {
+    // Simulate API call for market data
+    setTimeout(() => {
+      const mockData: MarketData = {
+        suiPrice: 3.45,
+        suiPriceChange24h: 5.67,
+        totalTVL: '$2.1B',
+        topGainers: [
+          { token: 'CETUS', change: 12.5 },
+          { token: 'TURBOS', change: 8.3 },
+          { token: 'BLUEMOVE', change: 6.7 }
+        ]
+      };
+      this.appState.update('marketData', mockData);
+    }, 1000);
   }
 
+ 
+  private getStakingOptions(): StakingOption[] {
+    return [
+      {
+        rank: 1,
+        name: 'Cetus Finance',
+        type: 'Liquidity Pool',
+        apy: '12.5%',
+        risk: 'medium',
+        color: 'blue',
+        tvl: '$450M',
+        description: 'Automated liquidity protocol'
+      },
+      {
+        rank: 2,
+        name: 'Suistake Protocol',
+        type: 'Validator Staking',
+        apy: '8.2%',
+        risk: 'low',
+        color: 'green',
+        tvl: '$380M',
+        description: 'Native SUI staking'
+      },
+      {
+        rank: 3,
+        name: 'Aftermath Finance',
+        type: 'Yield Aggregator',
+        apy: '15.8%',
+        risk: 'medium',
+        color: 'purple',
+        tvl: '$280M',
+        description: 'Auto-compounding vaults'
+      },
+      {
+        rank: 4,
+        name: 'Turbos Finance',
+        type: 'DEX LP',
+        apy: '18.3%',
+        risk: 'high',
+        color: 'orange',
+        tvl: '$320M',
+        description: 'Concentrated liquidity'
+      },
+      {
+        rank: 5,
+        name: 'BlueMove',
+        type: 'NFT Staking',
+        apy: '22.1%',
+        risk: 'high',
+        color: 'red',
+        tvl: '$120M',
+        description: 'NFT liquidity pools'
+      }
+    ];
+  }
+  
   private renderLearnView(): string {
     return `
       <div class="max-w-4xl mx-auto">
@@ -1338,77 +1608,7 @@ private renderMobileNav(): string {
     };
   }
 
-  private async fetchMarketData(): Promise<void> {
-    // Simulate API call for market data
-    setTimeout(() => {
-      const mockData: MarketData = {
-        suiPrice: 3.45,
-        suiPriceChange24h: 5.67,
-        totalTVL: '$2.1B',
-        topGainers: [
-          { token: 'CETUS', change: 12.5 },
-          { token: 'TURBOS', change: 8.3 },
-          { token: 'BLUEMOVE', change: 6.7 }
-        ]
-      };
-      this.appState.update('marketData', mockData);
-    }, 1000);
-  }
-
-  private getStakingOptions(): StakingOption[] {
-    return [
-      {
-        rank: 1,
-        name: 'Cetus Finance',
-        type: 'Liquidity Pool',
-        apy: '12.5%',
-        risk: 'medium',
-        color: 'blue',
-        tvl: '$450M',
-        description: 'Automated liquidity protocol'
-      },
-      {
-        rank: 2,
-        name: 'Suistake Protocol',
-        type: 'Validator Staking',
-        apy: '8.2%',
-        risk: 'low',
-        color: 'green',
-        tvl: '$380M',
-        description: 'Native SUI staking'
-      },
-      {
-        rank: 3,
-        name: 'Aftermath Finance',
-        type: 'Yield Aggregator',
-        apy: '15.8%',
-        risk: 'medium',
-        color: 'purple',
-        tvl: '$280M',
-        description: 'Auto-compounding vaults'
-      },
-      {
-        rank: 4,
-        name: 'Turbos Finance',
-        type: 'DEX LP',
-        apy: '18.3%',
-        risk: 'high',
-        color: 'orange',
-        tvl: '$320M',
-        description: 'Concentrated liquidity'
-      },
-      {
-        rank: 5,
-        name: 'BlueMove',
-        type: 'NFT Staking',
-        apy: '22.1%',
-        risk: 'high',
-        color: 'red',
-        tvl: '$120M',
-        description: 'NFT liquidity pools'
-      }
-    ];
-  }
+ 
 
   private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
     const notificationContainer = document.getElementById('notifications');
