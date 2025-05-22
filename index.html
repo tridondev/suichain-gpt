@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Suichain GPT DeFi Strategy Advisor - Your intelligent assistant for DeFi strategies on the Sui blockchain. Get expert advice on yield farming, liquidity provision, and more." />
+  <meta name="keywords" content="Suichain, GPT, DeFi, Strategy, Advisor, Blockchain, Cryptocurrency, Yield Farming, Liquidity" />
+  <meta name="author" content="Suichain Team" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="Suichain GPT DeFi Strategy Advisor" />
+  <meta property="og:description" content="Your intelligent assistant for DeFi strategies on the Sui blockchain" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://yourdomain.com" />
+  <meta property="og:image" content="/images/og-image.png" />
+  
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Suichain GPT DeFi Strategy Advisor" />
+  <meta name="twitter:description" content="Your intelligent assistant for DeFi strategies on the Sui blockchain" />
+  <meta name="twitter:image" content="/images/twitter-card.png" />
+  
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#0078f0" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="alternate icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.json" />
+  
+  <title>Suichain GPT </title>
+
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Additional Libraries (if needed) -->
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js" defer></script>
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+
+<body class="min-h-screen bg-gray-50">
+  <!-- Loading indicator -->
+  <div id="loading-indicator" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+    <div class="flex flex-col items-center">
+      <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <p class="mt-4 text-gray-600">Loading Suichain GPT...</p>
+    </div>
+  </div>
+  
+  <!-- No JavaScript fallback -->
+  <noscript>
+    <div class="flex items-center justify-center min-h-screen p-8 text-center bg-white">
+      <div class="max-w-md">
+        <h1 class="mb-4 text-2xl font-bold text-gray-800">JavaScript Required</h1>
+        <p class="text-gray-600">
+          Please enable JavaScript in your browser to use Suichain GPT DeFi Strategy Advisor.
+        </p>
+      </div>
+    </div>
+  </noscript>
+  
+  <!-- Main application container -->
+  <div id="app" class="app-container"></div>
+  
+  <!-- TypeScript/JavaScript entry point -->
+  <script type="module" src="/src/main.ts"></script>
+  
+  <!-- Error handling -->
+  <script>
+    window.addEventListener('error', function(event) {
+      console.error('Global error:', event.error);
+      document.getElementById('loading-indicator')?.classList.add('hidden');
+    });
+    
+    // Remove loading indicator when app loads
+    window.addEventListener('load', function() {
+      setTimeout(() => {
+        document.getElementById('loading-indicator')?.remove();
+      }, 500);
+    });
+  </script>
+  <div id="market-container"></div>
+  <!-- Analytics (if applicable) -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'GA_MEASUREMENT_ID');
+  </script> -->
+</body>
+
+</html>

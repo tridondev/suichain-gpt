@@ -551,7 +551,7 @@ class SuichainApp {
               </svg>
             </div>
             <div>
-              <h1 class="text-xl font-bold text-white">SuiChain AI</h1>
+              <h1 class="text-xl font-bold text-white">SuiChain</h1>
               <p class="text-xs text-slate-400">Smart DeFi Assistant</p>
             </div>
           </div>
