@@ -927,8 +927,8 @@ private renderView(view: string): string {
     return `
       <div class="space-y-6">
         <div class="grid md:grid-cols-4 gap-4">
-          ${this.renderPortfolioCard('Total Value', '$12,456.78', '+12.5%', 'green')}
-          ${this.renderPortfolioCard('Total Profit', '$1,234.56', '+10.2%', 'green')}
+          ${this.renderPortfolioCard('Total Value', '$1056.78', '+12.5%', 'green')}
+          ${this.renderPortfolioCard('Total Profit', '$356', '+10.2%', 'green')}
           ${this.renderPortfolioCard('Active Positions', '5', '', 'blue')}
           ${this.renderPortfolioCard('Avg. APY', '15.8%', '', 'purple')}
         </div>
@@ -1126,45 +1126,138 @@ private formatAddress(address: string): string {
     `;
   }
 
-  private renderMarketView(): string {
-  const marketData = this.appState.get('marketData') || {
-    chartData: [
-      { date: '05/01', price: 1.24, volume: 87, tps: 1243 },
-      { date: '05/02', price: 1.32, volume: 92, tps: 1358 },
-      { date: '05/03', price: 1.41, volume: 110, tps: 1402 },
-      { date: '05/04', price: 1.38, volume: 105, tps: 1289 },
-      { date: '05/05', price: 1.45, volume: 125, tps: 1512 },
-      { date: '05/06', price: 1.52, volume: 142, tps: 1623 },
-      { date: '05/07', price: 1.68, volume: 168, tps: 1745 },
-      { date: '05/08', price: 1.72, volume: 172, tps: 1802 },
-      { date: '05/09', price: 1.79, volume: 185, tps: 1956 },
-      { date: '05/10', price: 1.83, volume: 190, tps: 2103 },
-      { date: '05/11', price: 1.91, volume: 210, tps: 2254 },
-      { date: '05/12', price: 2.05, volume: 240, tps: 2387 },
-      { date: '05/13', price: 2.21, volume: 285, tps: 2512 },
-      { date: '05/14', price: 2.35, volume: 310, tps: 2645 },
-    ],
-    topGainers: [
-      { token: 'SUI', change: 15.6 },
-      { token: 'CETUS', change: 12.8 },
-      { token: 'SUISWAP', change: 9.3 },
-      { token: 'TURBOS', change: 7.2 },
-      { token: 'SCALLOP', change: -2.1 }
-    ]
+private renderMarketView(): string {
+  // Enhanced mock data generation with more realistic patterns
+  const generateMockChartData = () => {
+    const data = [];
+    const basePrice = 1.20;
+    const baseVolume = 80;
+    const baseTps = 1200;
+    
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (29 - i));
+      
+      // Generate realistic price movements with trends
+      const trend = Math.sin(i * 0.2) * 0.3; // Overall trend
+      const volatility = (Math.random() - 0.5) * 0.15; // Daily volatility
+      const price = basePrice * (1 + trend + volatility) * (1 + i * 0.02);
+      
+      // Volume correlation with price movements
+      const volumeMultiplier = 1 + Math.abs(volatility) * 2;
+      const volume = baseVolume * volumeMultiplier * (1 + Math.random() * 0.3);
+      
+      // TPS with some correlation to volume
+      const tps = baseTps * (1 + volumeMultiplier * 0.2) * (1 + Math.random() * 0.4);
+      
+      data.push({
+        date: date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }),
+        price: Math.max(0.5, Number(price.toFixed(2))),
+        volume: Math.max(50, Math.round(volume)),
+        tps: Math.max(800, Math.round(tps)),
+        timestamp: date.getTime()
+      });
+    }
+    return data;
   };
-  
-  // Create the chart script - this will be injected at the end of the body
+
+  const marketData = this.appState.get('marketData') || {
+    chartData: generateMockChartData(),
+    topGainers: [
+      { token: 'SUI', change: 15.6, volume: '$2.1M', marketCap: '$8.9B' },
+      { token: 'CETUS', change: 12.8, volume: '$890K', marketCap: '$156M' },
+      { token: 'SUISWAP', change: 9.3, volume: '$456K', marketCap: '$89M' },
+      { token: 'TURBOS', change: 7.2, volume: '$334K', marketCap: '$67M' },
+      { token: 'SCALLOP', change: -2.1, volume: '$123K', marketCap: '$45M' }
+    ],
+    marketStats: {
+      totalMarketCap: '$9.2B',
+      volume24h: '$3.9M',
+      dominance: '68.4%',
+      activeValidators: 142
+    }
+  };
+
+  // Enhanced chart script with analysis features
   const chartScript = `
     <script>
       document.addEventListener('DOMContentLoaded', () => {
-        // Reference to the chart container
         const chartContainer = document.getElementById('sui-chart-container');
         const priceButton = document.getElementById('price-btn');
         const volumeButton = document.getElementById('volume-btn');
         const tpsButton = document.getElementById('tps-btn');
+        const analysisPanel = document.getElementById('analysis-panel');
+        const timeframeButtons = document.querySelectorAll('.timeframe-btn');
         
         // Chart data
-        const chartData = ${JSON.stringify(marketData.chartData)};
+        let chartData = ${JSON.stringify(marketData.chartData)};
+        let currentMetric = 'price';
+        let currentTimeframe = '30d';
+        
+        // Analysis calculations
+        function calculateAnalytics(data, metric) {
+          const values = data.map(item => item[metric]);
+          const latest = values[values.length - 1];
+          const previous = values[values.length - 2];
+          const firstValue = values[0];
+          
+          const change24h = ((latest - previous) / previous * 100).toFixed(2);
+          const changeTotal = ((latest - firstValue) / firstValue * 100).toFixed(2);
+          const average = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2);
+          const max = Math.max(...values).toFixed(2);
+          const min = Math.min(...values).toFixed(2);
+          
+          // Volatility calculation
+          const returns = values.slice(1).map((val, i) => (val - values[i]) / values[i]);
+          const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+          const variance = returns.reduce((a, b) => a + Math.pow(b - avgReturn, 2), 0) / returns.length;
+          const volatility = (Math.sqrt(variance) * 100).toFixed(2);
+          
+          // Support and resistance levels
+          const sortedValues = [...values].sort((a, b) => a - b);
+          const support = sortedValues[Math.floor(sortedValues.length * 0.2)].toFixed(2);
+          const resistance = sortedValues[Math.floor(sortedValues.length * 0.8)].toFixed(2);
+          
+          return {
+            latest, change24h, changeTotal, average, max, min, 
+            volatility, support, resistance
+          };
+        }
+        
+        function updateAnalysis() {
+          const analytics = calculateAnalytics(chartData, currentMetric);
+          const metricConfig = getMetricConfig(currentMetric);
+          
+          document.getElementById('current-value').textContent = 
+            metricConfig.prefix + analytics.latest + metricConfig.suffix;
+          document.getElementById('change-24h').textContent = 
+            (analytics.change24h >= 0 ? '+' : '') + analytics.change24h + '%';
+          document.getElementById('change-24h').className = 
+            'text-sm ' + (analytics.change24h >= 0 ? 'text-green-400' : 'text-red-400');
+          
+          document.getElementById('total-change').textContent = 
+            (analytics.changeTotal >= 0 ? '+' : '') + analytics.changeTotal + '%';
+          document.getElementById('average').textContent = 
+            metricConfig.prefix + analytics.average + metricConfig.suffix;
+          document.getElementById('max-value').textContent = 
+            metricConfig.prefix + analytics.max + metricConfig.suffix;
+          document.getElementById('min-value').textContent = 
+            metricConfig.prefix + analytics.min + metricConfig.suffix;
+          document.getElementById('volatility').textContent = analytics.volatility + '%';
+          document.getElementById('support').textContent = 
+            metricConfig.prefix + analytics.support + metricConfig.suffix;
+          document.getElementById('resistance').textContent = 
+            metricConfig.prefix + analytics.resistance + metricConfig.suffix;
+        }
+        
+        function getMetricConfig(metric) {
+          const configs = {
+            price: { prefix: '$', suffix: '', label: 'SUI Price', color: 'rgb(14, 165, 233)', bgColor: 'rgba(14, 165, 233, 0.2)' },
+            volume: { prefix: '', suffix: 'M', label: 'Volume (millions)', color: 'rgb(139, 92, 246)', bgColor: 'rgba(139, 92, 246, 0.2)' },
+            tps: { prefix: '', suffix: '', label: 'Transactions per second', color: 'rgb(16, 185, 129)', bgColor: 'rgba(16, 185, 129, 0.1)' }
+          };
+          return configs[metric];
+        }
         
         // Chart configuration
         let chart;
@@ -1192,9 +1285,7 @@ private formatAddress(address: string): string {
               mode: 'index',
             },
             plugins: {
-              legend: {
-                display: false,
-              },
+              legend: { display: false },
               tooltip: {
                 backgroundColor: '#1F2937',
                 titleColor: '#F9FAFB',
@@ -1205,172 +1296,306 @@ private formatAddress(address: string): string {
                 displayColors: false,
                 callbacks: {
                   label: function(context) {
+                    const config = getMetricConfig(currentMetric);
                     let value = context.raw;
-                    return typeof value === 'number' ? '$' + value.toFixed(2) : value;
+                    return typeof value === 'number' ? 
+                      config.prefix + value.toFixed(currentMetric === 'price' ? 2 : 0) + config.suffix : value;
                   }
                 }
               }
             },
             scales: {
               x: {
-                grid: {
-                  color: 'rgba(55, 65, 81, 0.3)',
-                },
-                ticks: {
-                  color: '#9CA3AF',
-                }
+                grid: { color: 'rgba(55, 65, 81, 0.3)' },
+                ticks: { color: '#9CA3AF' }
               },
               y: {
-                grid: {
-                  color: 'rgba(55, 65, 81, 0.3)',
-                  drawBorder: false,
-                },
+                grid: { color: 'rgba(55, 65, 81, 0.3)', drawBorder: false },
                 ticks: {
                   color: '#9CA3AF',
                   callback: function(value) {
-                    return '$' + value;
+                    const config = getMetricConfig(currentMetric);
+                    return config.prefix + value + config.suffix;
                   }
                 }
+              }
+            },
+            onHover: (event, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const dataPoint = chartData[index];
+                updateHoverInfo(dataPoint);
               }
             }
           }
         };
         
         // Create the chart
-        chart = new Chart(
-          document.getElementById('sui-chart'),
-          chartConfig
-        );
+        chart = new Chart(document.getElementById('sui-chart'), chartConfig);
         
-        // Set up button event listeners
-        priceButton.addEventListener('click', () => {
-          switchToDataset('price', 'SUI Price ($)', 'rgb(14, 165, 233)', 'rgba(14, 165, 233, 0.2)', '$');
-          priceButton.classList.add('bg-blue-600', 'text-white');
-          priceButton.classList.remove('bg-slate-800', 'text-slate-300');
-          volumeButton.classList.add('bg-slate-800', 'text-slate-300');
-          volumeButton.classList.remove('bg-blue-600', 'text-white');
-          tpsButton.classList.add('bg-slate-800', 'text-slate-300');
-          tpsButton.classList.remove('bg-blue-600', 'text-white');
+        // Initialize analysis
+        updateAnalysis();
+        
+        function updateHoverInfo(dataPoint) {
+          document.getElementById('hover-date').textContent = dataPoint.date;
+          document.getElementById('hover-price').textContent = '$' + dataPoint.price;
+          document.getElementById('hover-volume').textContent = dataPoint.volume + 'M';
+          document.getElementById('hover-tps').textContent = dataPoint.tps;
+        }
+        
+        // Button event listeners with improved UI updates
+        function updateButtonStates(activeButton, metric) {
+          [priceButton, volumeButton, tpsButton].forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-slate-800', 'text-slate-300');
+          });
+          activeButton.classList.add('bg-blue-600', 'text-white');
+          activeButton.classList.remove('bg-slate-800', 'text-slate-300');
+          
+          currentMetric = metric;
+          switchToDataset(metric);
+          updateAnalysis();
+        }
+        
+        priceButton.addEventListener('click', () => updateButtonStates(priceButton, 'price'));
+        volumeButton.addEventListener('click', () => updateButtonStates(volumeButton, 'volume'));
+        tpsButton.addEventListener('click', () => updateButtonStates(tpsButton, 'tps'));
+        
+        // Timeframe buttons
+        timeframeButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            timeframeButtons.forEach(b => {
+              b.classList.remove('bg-blue-600', 'text-white');
+              b.classList.add('bg-slate-700', 'text-slate-300');
+            });
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('bg-slate-700', 'text-slate-300');
+            
+            currentTimeframe = btn.dataset.timeframe;
+            updateChartTimeframe(currentTimeframe);
+          });
         });
         
-        volumeButton.addEventListener('click', () => {
-          switchToDataset('volume', 'Volume (millions)', 'rgb(139, 92, 246)', 'rgba(139, 92, 246, 0.2)', '');
-          volumeButton.classList.add('bg-blue-600', 'text-white');
-          volumeButton.classList.remove('bg-slate-800', 'text-slate-300');
-          priceButton.classList.add('bg-slate-800', 'text-slate-300');
-          priceButton.classList.remove('bg-blue-600', 'text-white');
-          tpsButton.classList.add('bg-slate-800', 'text-slate-300');
-          tpsButton.classList.remove('bg-blue-600', 'text-white');
-        });
+        function updateChartTimeframe(timeframe) {
+          const days = { '7d': 7, '30d': 30, '90d': 90 }[timeframe] || 30;
+          const filteredData = chartData.slice(-days);
+          
+          chart.data.labels = filteredData.map(item => item.date);
+          chart.data.datasets[0].data = filteredData.map(item => item[currentMetric]);
+          chart.update();
+          updateAnalysis();
+        }
         
-        tpsButton.addEventListener('click', () => {
-          switchToDataset('tps', 'Transactions per second', 'rgb(16, 185, 129)', 'rgba(16, 185, 129, 0.1)', '');
-          tpsButton.classList.add('bg-blue-600', 'text-white');
-          tpsButton.classList.remove('bg-slate-800', 'text-slate-300');
-          priceButton.classList.add('bg-slate-800', 'text-slate-300');
-          priceButton.classList.remove('bg-blue-600', 'text-white');
-          volumeButton.classList.add('bg-slate-800', 'text-slate-300');
-          volumeButton.classList.remove('bg-blue-600', 'text-white');
-        });
-        
-        function switchToDataset(metric, label, borderColor, backgroundColor, prefix) {
+        function switchToDataset(metric) {
+          const config = getMetricConfig(metric);
           chart.data.datasets[0].data = chartData.map(item => item[metric]);
-          chart.data.datasets[0].label = label;
-          chart.data.datasets[0].borderColor = borderColor;
-          chart.data.datasets[0].backgroundColor = backgroundColor;
-          
-          chart.options.plugins.tooltip.callbacks.label = function(context) {
-            let value = context.raw;
-            return typeof value === 'number' ? prefix + value.toFixed(metric === 'price' ? 2 : 0) : value;
-          };
-          
-          chart.options.scales.y.ticks.callback = function(value) {
-            return prefix + value;
-          };
-          
+          chart.data.datasets[0].label = config.label;
+          chart.data.datasets[0].borderColor = config.color;
+          chart.data.datasets[0].backgroundColor = config.bgColor;
           chart.update();
         }
+        
+        // Auto-refresh data every 30 seconds
+        setInterval(() => {
+          // Simulate real-time data updates
+          const lastPoint = chartData[chartData.length - 1];
+          const newPrice = lastPoint.price * (1 + (Math.random() - 0.5) * 0.02);
+          const newVolume = lastPoint.volume * (1 + (Math.random() - 0.5) * 0.1);
+          const newTps = lastPoint.tps * (1 + (Math.random() - 0.5) * 0.05);
+          
+          chartData[chartData.length - 1] = {
+            ...lastPoint,
+            price: Math.max(0.5, Number(newPrice.toFixed(2))),
+            volume: Math.max(50, Math.round(newVolume)),
+            tps: Math.max(800, Math.round(newTps))
+          };
+          
+          chart.data.datasets[0].data = chartData.map(item => item[currentMetric]);
+          chart.update('none');
+          updateAnalysis();
+        }, 30000);
       });
     </script>
   `;
-  
-  // Create the HTML for the market view
+
+  // Enhanced HTML with analysis panel
   return `
     <div class="space-y-6">
-      <div class="grid md:grid-cols-3 gap-6">
-        <div class="col-span-2">
+      <!-- Market Stats Overview -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="card p-4">
+          <div class="text-sm text-slate-400">Market Cap</div>
+          <div class="text-lg font-semibold text-white">${marketData.marketStats?.totalMarketCap || '$9.2B'}</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-sm text-slate-400">24h Volume</div>
+          <div class="text-lg font-semibold text-white">${marketData.marketStats?.volume24h || '$3.9M'}</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-sm text-slate-400">SUI Dominance</div>
+          <div class="text-lg font-semibold text-white">${marketData.marketStats?.dominance || '68.4%'}</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-sm text-slate-400">Active Validators</div>
+          <div class="text-lg font-semibold text-white">${marketData.marketStats?.activeValidators || 142}</div>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-4 gap-6">
+        <!-- Main Chart -->
+        <div class="lg:col-span-3">
           <div class="card p-6">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold text-white">Sui Network Metrics</h3>
-              <div class="flex space-x-2">
-                <button 
-                  id="price-btn" 
-                  class="px-3 py-1 rounded-md text-sm bg-blue-600 text-white"
-                >
-                  Price
-                </button>
-                <button 
-                  id="volume-btn" 
-                  class="px-3 py-1 rounded-md text-sm bg-slate-800 text-slate-300 hover:bg-slate-700"
-                >
-                  Volume
-                </button>
-                <button 
-                  id="tps-btn" 
-                  class="px-3 py-1 rounded-md text-sm bg-slate-800 text-slate-300 hover:bg-slate-700"
-                >
-                  TPS
-                </button>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
+              <h3 class="text-lg font-semibold text-white">Sui Network Analytics</h3>
+              <div class="flex flex-wrap gap-2">
+                <div class="flex space-x-1">
+                  <button class="timeframe-btn px-2 py-1 rounded text-xs bg-slate-700 text-slate-300" data-timeframe="7d">7D</button>
+                  <button class="timeframe-btn px-2 py-1 rounded text-xs bg-blue-600 text-white" data-timeframe="30d">30D</button>
+                  <button class="timeframe-btn px-2 py-1 rounded text-xs bg-slate-700 text-slate-300" data-timeframe="90d">90D</button>
+                </div>
+                <div class="flex space-x-1">
+                  <button id="price-btn" class="px-3 py-1 rounded-md text-sm bg-blue-600 text-white">Price</button>
+                  <button id="volume-btn" class="px-3 py-1 rounded-md text-sm bg-slate-800 text-slate-300 hover:bg-slate-700">Volume</button>
+                  <button id="tps-btn" class="px-3 py-1 rounded-md text-sm bg-slate-800 text-slate-300 hover:bg-slate-700">TPS</button>
+                </div>
               </div>
             </div>
-            <div id="sui-chart-container" class="h-64 bg-slate-800 rounded-lg">
+            <div id="sui-chart-container" class="h-80 bg-slate-800 rounded-lg">
               <canvas id="sui-chart"></canvas>
+            </div>
+            
+            <!-- Hover Info Panel -->
+            <div class="mt-4 p-3 bg-slate-800 rounded-lg">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span class="text-slate-400">Date:</span>
+                  <span id="hover-date" class="text-white ml-1">--</span>
+                </div>
+                <div>
+                  <span class="text-slate-400">Price:</span>
+                  <span id="hover-price" class="text-white ml-1">--</span>
+                </div>
+                <div>
+                  <span class="text-slate-400">Volume:</span>
+                  <span id="hover-volume" class="text-white ml-1">--</span>
+                </div>
+                <div>
+                  <span class="text-slate-400">TPS:</span>
+                  <span id="hover-tps" class="text-white ml-1">--</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         
+        <!-- Analysis Panel -->
+        <div class="space-y-4">
+          <!-- Current Metrics -->
+          <div class="card p-4">
+            <h4 class="text-sm font-semibold text-white mb-3">Current Metrics</h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Current:</span>
+                <span id="current-value" class="text-white font-medium">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">24h Change:</span>
+                <span id="change-24h" class="text-sm">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Total Change:</span>
+                <span id="total-change" class="text-sm text-slate-300">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistical Analysis -->
+          <div class="card p-4">
+            <h4 class="text-sm font-semibold text-white mb-3">Statistics</h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Average:</span>
+                <span id="average" class="text-white">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">High:</span>
+                <span id="max-value" class="text-green-400">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Low:</span>
+                <span id="min-value" class="text-red-400">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Volatility:</span>
+                <span id="volatility" class="text-yellow-400">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Support/Resistance -->
+          <div class="card p-4">
+            <h4 class="text-sm font-semibold text-white mb-3">Technical Levels</h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Support:</span>
+                <span id="support" class="text-green-400">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Resistance:</span>
+                <span id="resistance" class="text-red-400">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Top Movers and DeFi Protocols -->
+      <div class="grid md:grid-cols-2 gap-6">
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">Sui Ecosystem Movers</h3>
           <div class="space-y-3">
             ${marketData?.topGainers?.map((gainer: any) => `
-              <div class="flex justify-between items-center">
-                <span class="text-sm text-white">${gainer.token}</span>
-                <span class="text-sm ${gainer.change >= 0 ? 'text-green-400' : 'text-red-400'}">
+              <div class="flex justify-between items-center p-3 bg-slate-800 rounded-lg">
+                <div>
+                  <div class="text-sm font-medium text-white">${gainer.token}</div>
+                  <div class="text-xs text-slate-400">${gainer.volume || 'N/A'} • ${gainer.marketCap || 'N/A'}</div>
+                </div>
+                <span class="text-sm font-medium ${gainer.change >= 0 ? 'text-green-400' : 'text-red-400'}">
                   ${gainer.change >= 0 ? '+' : ''}${gainer.change}%
                 </span>
               </div>
             `).join('') || '<p class="text-slate-400">Loading...</p>'}
           </div>
         </div>
-      </div>
-      
-      <div class="card p-6">
-        <h3 class="text-lg font-semibold text-white mb-4">Sui DeFi Protocols</h3>
-        <div class="grid md:grid-cols-3 gap-4">
-          ${this.getStakingOptions().map(protocol => `
-            <div class="p-4 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
-              <div class="flex justify-between items-start mb-3">
-                <h4 class="font-medium text-white">${protocol.name}</h4>
-                <span class="text-xs px-2 py-1 rounded-full ${
-                  protocol.risk === 'low' ? 'bg-green-500/20 text-green-400' :
-                  protocol.risk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-red-500/20 text-red-400'
-                }">
-                  ${protocol.risk} risk
-                </span>
-              </div>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-slate-400">TVL</span>
-                  <span class="text-white">${protocol.tvl}</span>
+        
+        <div class="card p-6">
+          <h3 class="text-lg font-semibold text-white mb-4">DeFi Protocols</h3>
+          <div class="space-y-3">
+            ${this.getStakingOptions().map(protocol => `
+              <div class="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
+                <div class="flex justify-between items-start mb-2">
+                  <h4 class="font-medium text-white text-sm">${protocol.name}</h4>
+                  <span class="text-xs px-2 py-1 rounded-full ${
+                    protocol.risk === 'low' ? 'bg-green-500/20 text-green-400' :
+                    protocol.risk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-red-500/20 text-red-400'
+                  }">
+                    ${protocol.risk}
+                  </span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-400">APY</span>
-                  <span class="text-green-400">${protocol.apy}</span>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">TVL:</span>
+                    <span class="text-white">${protocol.tvl}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">APY:</span>
+                    <span class="text-green-400">${protocol.apy}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          `).join('')}
+            `).join('')}
+          </div>
         </div>
       </div>
       
