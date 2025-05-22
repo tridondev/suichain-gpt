@@ -968,24 +968,149 @@ private renderView(view: string): string {
     `;
   }
 
-  private renderConnectWalletPrompt(): string {
+  
+private renderConnectWalletPrompt(userAddress?: string): string {
+  // If user address is provided, show connected state
+  if (userAddress) {
     return `
       <div class="flex items-center justify-center min-h-[400px]">
         <div class="text-center">
-          <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3 class="text-xl font-semibold text-white mb-2">Connect Your Wallet</h3>
-          <p class="text-slate-400 mb-6">Connect your wallet to view your DeFi portfolio</p>
-          <button id="connect-wallet-prompt" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105">
-            Connect Wallet
-          </button>
+          <h3 class="text-xl font-semibold text-white mb-2">Wallet Connected</h3>
+          <p class="text-slate-400 mb-2">Connected Address:</p>
+          <p class="text-blue-400 font-mono text-sm mb-6 break-all">${this.formatAddress(userAddress)}</p>
+          <div class="flex gap-3 justify-center">
+            <button id="view-portfolio" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105">
+              View Portfolio
+            </button>
+            <button id="disconnect-wallet" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg font-medium transition-all">
+              Disconnect
+            </button>
+          </div>
         </div>
       </div>
     `;
   }
+
+  // Default state - no wallet connected
+  return `
+    <div class="flex items-center justify-center min-h-[400px]">
+      <div class="text-center max-w-md mx-auto">
+        <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-2">Connect Your Wallet</h3>
+        <p class="text-slate-400 mb-6">Connect your wallet or enter your Sui address to view your DeFi portfolio</p>
+        
+        <div class="mb-6">
+          <input 
+            type="text" 
+            id="wallet-address-input" 
+            placeholder="Enter your Sui address (0x...)" 
+            class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+          />
+          <div id="address-error" class="text-red-400 text-sm mt-2 hidden"></div>
+        </div>
+        
+        <div class="flex gap-3 justify-center">
+          <button id="connect-wallet-prompt" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105">
+            Connect Wallet
+          </button>
+          <button id="use-address-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg font-medium transition-all">
+            Use Address
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Helper method to validate Sui addresses
+private isValidSuiAddress(address: string): boolean {
+  // Sui addresses are 32 bytes (64 hex characters) with 0x prefix
+  const suiAddressRegex = /^0x[a-fA-F0-9]{64}$/;
+  return suiAddressRegex.test(address);
+}
+
+// Method to handle manual address input
+private handleAddressInput(): void {
+  const input = document.getElementById('wallet-address-input') as HTMLInputElement;
+  const errorDiv = document.getElementById('address-error') as HTMLElement;
+  const useAddressBtn = document.getElementById('use-address-btn') as HTMLButtonElement;
+  
+  if (!input || !errorDiv || !useAddressBtn) return;
+  
+  useAddressBtn.addEventListener('click', () => {
+    const address = input.value.trim();
+    
+    if (!address) {
+      this.showAddressError('Please enter a Sui address');
+      return;
+    }
+    
+    if (!this.isValidSuiAddress(address)) {
+      this.showAddressError('Invalid Sui address format. Address should be 0x followed by 64 hex characters.');
+      return;
+    }
+    
+    // Clear any previous errors
+    this.hideAddressError();
+    
+    // Process the valid address
+    this.onAddressSubmitted(address);
+  });
+  
+  // Clear error on input change
+  input.addEventListener('input', () => {
+    this.hideAddressError();
+  });
+  
+  // Allow Enter key to submit
+  input.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+      useAddressBtn.click();
+    }
+  });
+}
+
+private showAddressError(message: string): void {
+  const errorDiv = document.getElementById('address-error') as HTMLElement;
+  if (errorDiv) {
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('hidden');
+  }
+}
+
+private hideAddressError(): void {
+  const errorDiv = document.getElementById('address-error') as HTMLElement;
+  if (errorDiv) {
+    errorDiv.classList.add('hidden');
+  }
+}
+
+// Override this method to handle when a valid address is submitted
+private onAddressSubmitted(address: string): void {
+  // This should be implemented based on your application logic
+  console.log('Valid address submitted:', address);
+  // Example: Update the UI to show connected state
+  // this.updateUIWithAddress(address);
+}
+
+// Usage examples:
+// renderConnectWalletPrompt() - Shows connect prompt
+// renderConnectWalletPrompt("0x1234...abcd") - Shows connected state with address
+
+// Helper method to format Sui addresses for display
+private formatAddress(address: string): string {
+  if (address.length <= 16) return address;
+  return `${address.slice(0, 8)}...${address.slice(-8)}`;
+}
 
   private renderPortfolioCard(title: string, value: string, change: string, color: string): string {
     return `

@@ -1,15 +1,17 @@
-
 {
   "compilerOptions": {
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "module": "CommonJS",
     "target": "ES6",
-    "rootDir": "./src",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
-    "sourceMap": true,
-    "resolveJsonModule": true
+    "strictPropertyInitialization": false,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "sourceMap": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
