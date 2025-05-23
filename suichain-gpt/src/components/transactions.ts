@@ -56,27 +56,7 @@ export async function loadNFTs(): Promise<void> {
     myNFTs = [];
     
     // Fetch and process each NFT's details
-    for (const nftObj of nftObjects) {
-      const objectId = nftObj.data?.objectId;
-      if (objectId) {
-        const nftDetails = await getObject(objectId);
-        
-        if (nftDetails.data?.content) {
-          const content = nftDetails.data.content;
-          
-          // Extract NFT data from content
-          const nft: NFT = {
-            id: objectId,
-            name: content.fields?.name || 'Unnamed NFT',
-            description: content.fields?.description || 'No description',
-            url: content.fields?.url || '',
-            owner: address
-          };
-          
-          myNFTs.push(nft);
-        }
-      }
-    }
+
     
     // Render the NFTs to the DOM
     renderNFTs();

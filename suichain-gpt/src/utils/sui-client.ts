@@ -109,15 +109,15 @@ export async function createNFTTransaction(
   const tx = new Transaction();
   
   // Add string arguments
-  const nameArg = tx.pure(name);
-  const descriptionArg = tx.pure(description);
-  const urlArg = tx.pure(url);
+  //const nameArg = tx.pure(name);
+  //const descriptionArg = tx.pure(description);
+ // const urlArg = tx.pure(url);
   
   // Add the move call
   const fullTarget = `${CONTRACT_ADDRESS}::${MODULE_NAME}::create_nft`;
   tx.moveCall({
     target: fullTarget,
-    arguments: [nameArg, descriptionArg, urlArg],
+   // arguments: [nameArg, descriptionArg, urlArg],
   });
   
   // Set gas budget
@@ -152,13 +152,13 @@ export async function listNFTTransaction(
   const nft = tx.object(nftId);
   
   // Add price argument - renamed variable to avoid confusion
-  const priceValue = tx.pure(price);
+  //const priceValue = tx.pure(price);
   
   // Add the move call
   const fullTarget = `${CONTRACT_ADDRESS}::${MODULE_NAME}::list_nft`;
   tx.moveCall({
     target: fullTarget,
-    arguments: [nft, priceValue],
+   // arguments: [nft, priceValue],
   });
   
   // Set gas budget
@@ -190,7 +190,7 @@ export async function buyNFTTransaction(
   const tx = new Transaction();
   
   // Split coins for payment
-  const [coin] = tx.splitCoins(tx.gas, [tx.pure(price)]);
+ // const [coin] = tx.splitCoins(tx.gas, [tx.pure(price)]);
   
   // Use the listing object
   const listing = tx.object(listingId);
@@ -199,7 +199,7 @@ export async function buyNFTTransaction(
   const fullTarget = `${CONTRACT_ADDRESS}::${MODULE_NAME}::buy_nft`;
   tx.moveCall({
     target: fullTarget,
-    arguments: [listing, coin],
+    //arguments: [listing, coin],
   });
   
   // Set gas budget

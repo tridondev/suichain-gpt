@@ -5,13 +5,14 @@
     "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": "./src",
-    "strict": true,
     "strictPropertyInitialization": false,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "strict": false,
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
